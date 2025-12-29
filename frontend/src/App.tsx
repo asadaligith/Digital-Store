@@ -3,15 +3,21 @@
  */
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { CartProvider } from './contexts/CartContext';
+import { CheckoutProvider } from './contexts/CheckoutContext';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
+import { Cart } from './pages/Cart';
+import { Checkout } from './pages/Checkout';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <CartProvider>
+        <CheckoutProvider>
+          <Routes>
         {/* Home Page */}
         <Route
           path="/"
@@ -43,6 +49,12 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/products/:slug" element={<ProductDetail />} />
 
+        {/* Cart Page */}
+        <Route path="/cart" element={<Cart />} />
+
+        {/* Checkout Page */}
+        <Route path="/checkout" element={<Checkout />} />
+
         {/* Catch-all 404 */}
         <Route
           path="*"
@@ -70,6 +82,8 @@ function App() {
           }
         />
       </Routes>
+        </CheckoutProvider>
+      </CartProvider>
     </BrowserRouter>
   );
 }

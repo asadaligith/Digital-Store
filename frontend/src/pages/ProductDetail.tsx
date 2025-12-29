@@ -14,6 +14,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProductBySlug, Product } from '../services/api/products';
+import { useCart } from '../contexts/CartContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
@@ -22,6 +23,7 @@ import Spinner from '../components/common/Spinner';
 export const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,10 +58,14 @@ export const ProductDetail = () => {
 
     setIsAddingToCart(true);
     try {
-      // TODO: Implement cart functionality in next phase
-      console.log('Add to cart:', { product, quantity });
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await addToCart({
+        product_id: product._id,
+        quantity: quantity,
+      });
+      // Success feedback could be added here (toast notification, etc.)
+    } catch (error: any) {
+      console.error('Failed to add to cart:', error);
+      alert(error.message || 'Failed to add item to cart');
     } finally {
       setIsAddingToCart(false);
     }

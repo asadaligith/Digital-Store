@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getProducts, Product } from '../services/api/products';
 import { getCategories, Category } from '../services/api/categories';
+import { useCart } from '../contexts/CartContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import ProductGrid from '../components/products/ProductGrid';
@@ -25,6 +26,7 @@ import Spinner from '../components/common/Spinner';
 
 export const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { addToCart } = useCart();
 
   // State
   const [products, setProducts] = useState<Product[]>([]);
@@ -182,8 +184,16 @@ export const Products = () => {
   };
 
   const handleAddToCart = async (product: Product) => {
-    // TODO: Implement cart functionality in next phase
-    console.log('Add to cart:', product);
+    try {
+      await addToCart({
+        product_id: product._id,
+        quantity: 1,
+      });
+      // Success feedback could be added here (toast notification, etc.)
+    } catch (error: any) {
+      console.error('Failed to add to cart:', error);
+      alert(error.message || 'Failed to add item to cart');
+    }
   };
 
   return (

@@ -77,16 +77,17 @@ app.middleware("http")(error_handler_middleware)
 
 # ===== Routes =====
 
-from src.api.routes import products, categories
+from src.api.routes import products, categories, cart, checkout
 
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(categories.router, prefix="/api/categories", tags=["Categories"])
+app.include_router(cart.router, prefix="/api/cart", tags=["Cart"])
+app.include_router(checkout.router, prefix="/api/checkout", tags=["Checkout"])
 
 # Note: Additional routes will be added as we implement each feature
 # Example:
-# from src.api.routes import auth, cart, orders, users
+# from src.api.routes import auth, orders, users
 # app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-# app.include_router(cart.router, prefix="/api/cart", tags=["Cart"])
 # app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 # app.include_router(users.router, prefix="/api/users", tags=["Users"])
 

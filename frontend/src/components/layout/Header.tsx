@@ -16,6 +16,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
+import { CartBadge } from '../cart/CartBadge';
 
 export interface HeaderProps {
   /** Whether the header should stick to the top */
@@ -38,9 +39,8 @@ export const Header = ({ sticky = true, className = '' }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // TODO: These will come from context/state management later
+  // TODO: Authentication state will come from auth context when implemented
   const isAuthenticated = false;
-  const cartItemCount = 0;
   const userName = 'John Doe';
 
   const handleSearch = (e: React.FormEvent) => {
@@ -145,31 +145,7 @@ export const Header = ({ sticky = true, className = '' }: HeaderProps) => {
           {/* Actions */}
           <div className="flex items-center space-x-2 md:space-x-4">
             {/* Cart */}
-            <Link
-              to="/cart"
-              className="relative p-2 text-gray-700 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-              aria-label={`Shopping cart with ${cartItemCount} items`}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              {cartItemCount > 0 && (
-                <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-primary-600 rounded-full">
-                  {cartItemCount > 9 ? '9+' : cartItemCount}
-                </span>
-              )}
-            </Link>
+            <CartBadge />
 
             {/* User Menu */}
             {isAuthenticated ? (
