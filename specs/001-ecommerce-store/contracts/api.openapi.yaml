@@ -1,0 +1,913 @@
+openapi: 3.1.0
+info:
+  title: E-Commerce Store API
+  description: RESTful API for the E-Commerce Store Platform with product browsing, cart management, checkout, payment processing, and user account management
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api-staging.example.com
+    description: Staging server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Auth
+    description: Authentication and authorization endpoints
+  - name: Products
+    description: Product browsing, searching, and filtering
+  - name: Cart
+    description: Shopping cart management
+  - name: Checkout
+    description: Checkout process and order creation
+  - name: Orders
+    description: Order management and history
+  - name: Users
+    description: User profile and account management
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token in Authorization header
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: JWT access token in httpOnly cookie
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: INVALID_INPUT
+            message:
+              type: string
+              example: Invalid email format
+            details:
+              type: object
+              additionalProperties: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+        has_next:
+          type: boolean
+          example: true
+
+    # Auth schemas
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - full_name
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: SecurePass123!
+        full_name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: John Doe
+        phone:
+          type: string
+          pattern: '^\+[1-9]\d{1,14}$'
+          example: +1234567890
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          example: SecurePass123!
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh_token:
+          type: string
+          example: a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6
+        token_type:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        full_name:
+          type: string
+          example: John Doe
+        phone:
+          type: string
+          example: +1234567890
+        is_email_verified:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+
+    # Product schemas
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        name:
+          type: string
+          example: Wireless Bluetooth Headphones
+        slug:
+          type: string
+          example: wireless-bluetooth-headphones
+        description:
+          type: string
+          example: Premium noise-cancelling headphones with 30-hour battery life
+        specifications:
+          type: object
+          additionalProperties: true
+        price:
+          type: number
+          format: decimal
+          example: 149.99
+        category_id:
+          type: string
+          example: 507f1f77bcf86cd799439020
+        category_name:
+          type: string
+          example: Headphones
+        brand:
+          type: string
+          example: AudioTech
+        sku:
+          type: string
+          example: AT-BT-HP-001
+        stock_quantity:
+          type: integer
+          example: 50
+        is_available:
+          type: boolean
+          example: true
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              alt_text:
+                type: string
+              is_primary:
+                type: boolean
+        average_rating:
+          type: number
+          format: float
+          example: 4.5
+        review_count:
+          type: integer
+          example: 128
+        created_at:
+          type: string
+          format: date-time
+
+    ProductList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439020
+        name:
+          type: string
+          example: Electronics
+        slug:
+          type: string
+          example: electronics
+        parent_id:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+          format: uri
+        display_order:
+          type: integer
+
+    # Cart schemas
+    CartItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        product_name:
+          type: string
+          example: Wireless Bluetooth Headphones
+        product_image:
+          type: string
+          format: uri
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        price:
+          type: number
+          format: decimal
+          example: 149.99
+        subtotal:
+          type: number
+          format: decimal
+          example: 299.98
+
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439030
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+          format: decimal
+          example: 319.97
+        item_count:
+          type: integer
+          example: 3
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AddToCartRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+          example: 2
+
+    UpdateCartItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+          example: 3
+
+    # Order schemas
+    ShippingAddress:
+      type: object
+      required:
+        - full_name
+        - address_line1
+        - city
+        - state
+        - postal_code
+        - country
+        - phone
+      properties:
+        full_name:
+          type: string
+          example: John Doe
+        address_line1:
+          type: string
+          example: 123 Main Street
+        address_line2:
+          type: string
+          example: Apt 4B
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          example: NY
+        postal_code:
+          type: string
+          example: "10001"
+        country:
+          type: string
+          example: United States
+        phone:
+          type: string
+          example: +1234567890
+
+    OrderItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+        product_name:
+          type: string
+        product_sku:
+          type: string
+        quantity:
+          type: integer
+        price_at_purchase:
+          type: number
+          format: decimal
+        subtotal:
+          type: number
+          format: decimal
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439040
+        order_number:
+          type: string
+          example: ORD-20250115-ABC123
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled]
+          example: processing
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        shipping_address:
+          $ref: '#/components/schemas/ShippingAddress'
+        shipping_method:
+          type: string
+          enum: [standard, express, overnight]
+          example: standard
+        shipping_cost:
+          type: number
+          format: decimal
+          example: 9.99
+        subtotal:
+          type: number
+          format: decimal
+          example: 319.97
+        tax_amount:
+          type: number
+          format: decimal
+          example: 28.80
+        total_amount:
+          type: number
+          format: decimal
+          example: 358.76
+        payment_method:
+          type: string
+          example: credit_card
+        estimated_delivery_date:
+          type: string
+          format: date
+        tracking_number:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - shipping_address
+        - shipping_method
+      properties:
+        shipping_address:
+          $ref: '#/components/schemas/ShippingAddress'
+        shipping_method:
+          type: string
+          enum: [standard, express, overnight]
+          example: standard
+        notes:
+          type: string
+          maxLength: 500
+          example: Please leave at the front desk
+
+paths:
+  # Auth endpoints
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  message:
+                    type: string
+                    example: Registration successful. Please check your email to verify your account.
+        '400':
+          description: Invalid input or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: access_token=eyJhbGci...; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout and invalidate refresh token
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successful
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthResponse'
+
+  # Product endpoints
+  /api/products:
+    get:
+      tags:
+        - Products
+      summary: List products with filtering, sorting, and pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Items per page
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug
+        - name: min_price
+          in: query
+          schema:
+            type: number
+          description: Minimum price filter
+        - name: max_price
+          in: query
+          schema:
+            type: number
+          description: Maximum price filter
+        - name: in_stock
+          in: query
+          schema:
+            type: boolean
+          description: Filter by stock availability
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [price, rating, newest, popularity]
+            default: newest
+          description: Sort field
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+
+  /api/products/{product_id}:
+    get:
+      tags:
+        - Products
+      summary: Get product details by ID
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/categories:
+    get:
+      tags:
+        - Products
+      summary: List all product categories
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+  # Cart endpoints
+  /api/cart:
+    get:
+      tags:
+        - Cart
+      summary: Get current user's cart
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+
+  /api/cart/items:
+    post:
+      tags:
+        - Cart
+      summary: Add item to cart
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '200':
+          description: Item added to cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+
+  /api/cart/items/{product_id}:
+    patch:
+      tags:
+        - Cart
+      summary: Update cart item quantity
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: Cart item updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+
+    delete:
+      tags:
+        - Cart
+      summary: Remove item from cart
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed from cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cart'
+
+  # Order endpoints
+  /api/orders:
+    post:
+      tags:
+        - Orders
+      summary: Create order from cart
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+    get:
+      tags:
+        - Orders
+      summary: List user's orders
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /api/orders/{order_id}:
+    get:
+      tags:
+        - Orders
+      summary: Get order details
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+
+  # User endpoints
+  /api/users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+
+    patch:
+      tags:
+        - Users
+      summary: Update user profile
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
